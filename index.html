@@ -1237,17 +1237,35 @@ function showDemoBannerIfNeeded(){
   if(GAS_URL || document.getElementById('__demoBar')) return;
   var bar=document.createElement('div');
   bar.id='__demoBar';
-  bar.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#1f2937;color:#fff;font-size:13px;line-height:1.4;padding:8px 36px 8px 14px;text-align:center;font-family:Jua,sans-serif;';
+  bar.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:2147483000;background:#1f2937;color:#fff;font-size:13px;line-height:1.45;padding:10px 38px calc(10px + env(safe-area-inset-bottom)) 14px;box-shadow:0 -2px 10px rgba(0,0,0,0.25);text-align:center;font-family:Jua,sans-serif;';
   bar.innerHTML='체험 모드예요 · 활동 기록은 이 기기에만 저장돼요(이어하기 가능). 선생님이 구글 시트를 연결하면 시트에 저장됩니다.';
   var x=document.createElement('button');
   x.textContent='\u2715';
   x.style.cssText='position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:#fff;font-size:16px;cursor:pointer;';
-  x.onclick=function(){ bar.remove(); };
+  x.onclick=function(){ removeDemoBanner(); };
   bar.appendChild(x);
   document.body.appendChild(bar);
+  applyBannerSpacing();
 }
-function removeDemoBanner(){ var b=document.getElementById('__demoBar'); if(b) b.remove(); }
-window.addEventListener('DOMContentLoaded', showDemoBannerIfNeeded);
+function applyBannerSpacing(){
+  var b=document.getElementById('__demoBar'); if(!b) return;
+  var h=(b.offsetHeight||44);
+  document.body.style.paddingBottom=h+'px';
+  var r=document.getElementById('root'); if(r){ r.style.height='calc(100% - '+h+'px)'; }
+  var ac=document.getElementById('app-container');
+  if(ac && typeof resizeApp!=='function'){ ac.style.maxHeight='min(900px, calc(100vh - '+(h+6)+'px))'; }
+  if(typeof resizeApp==='function') resizeApp();
+}
+function removeDemoBanner(){
+  var b=document.getElementById('__demoBar'); if(b) b.remove();
+  document.body.style.paddingBottom='';
+  var r=document.getElementById('root'); if(r){ r.style.height=''; }
+  var ac=document.getElementById('app-container'); if(ac){ ac.style.maxHeight=''; }
+  if(typeof resizeApp==='function') resizeApp();
+}
+function _initDemoBanner(){ try{ showDemoBannerIfNeeded(); }catch(e){} }
+if(document.readyState==='loading'){ window.addEventListener('DOMContentLoaded', _initDemoBanner); } else { _initDemoBanner(); }
+window.addEventListener('load', _initDemoBanner);
 
 /* ── 무드미터 4사분면 정보 ──────────────────────────── */
 const QUADRANTS = {
