@@ -1222,39 +1222,17 @@ function readServerUrl(){
 }
 let GAS_URL = readServerUrl();
 
-/* 다른 주소(깃허브 등)에서도 시트 자료를 읽을 수 있게 script 태그로 요청합니다 */
-const gasJsonp = (params, timeoutMs) => new Promise((resolve) => {
-  if(!GAS_URL){ resolve(null); return; }
-  const cb = '__emoCb' + Date.now() + '_' + Math.floor(Math.random()*1e6);
-  const s = document.createElement('script');
-  let done = false;
-  const cleanup = () => {
-    try{ delete window[cb]; }catch(e){ window[cb] = undefined; }
-    if(s.parentNode) s.parentNode.removeChild(s);
-  };
-  window[cb] = (data) => { if(done) return; done = true; cleanup(); resolve(data); };
-  s.onerror = () => { if(done) return; done = true; cleanup(); resolve(null); };
-  setTimeout(() => { if(done) return; done = true; cleanup(); resolve(null); }, timeoutMs || 15000);
-  const qs = Object.keys(params).map(k => encodeURIComponent(k)+'='+encodeURIComponent(params[k])).join('&');
-  s.src = GAS_URL + (GAS_URL.indexOf('?') < 0 ? '?' : '&') + qs + '&callback=' + cb;
-  document.body.appendChild(s);
-});
-
 const gasGet = async (action) => {
   if(!GAS_URL) return null;
-  return await gasJsonp({ action });
+  try{
+    const r = await fetch(`${GAS_URL}?action=${action}`,{redirect:'follow'});
+    return JSON.parse(await r.text());
+  }catch(_){return null}
 };
 const gasPost = async (data) => {
   if(!GAS_URL) return;
-  let payload = '';
-  try{ payload = JSON.stringify(data); }catch(_){ return; }
-  // 기록이 짧으면 script 태그로 보내 저장 결과까지 확인합니다.
-  if(payload.length < 1500){
-    const r = await gasJsonp({ action:'saveResult', data: payload });
-    if(r && r.success) return;
-  }
   try{
-    await fetch(GAS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:payload});
+    await fetch(GAS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify(data)});
   }catch(_){}
 };
 
